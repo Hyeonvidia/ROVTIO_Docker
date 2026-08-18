@@ -1,0 +1,17 @@
+--- /Users/jhpark/VSLAM/ROVTIO_Docker/third_party/rovio/include/rovio/MultilevelPatch.hpp	2026-08-18 02:04:42
++++ /Users/jhpark/VSLAM/ROVTIO_Docker/contrib/include/rovio/MultilevelPatch.hpp	2026-08-18 03:08:23
+@@ -210,6 +210,14 @@
+   }
+ };
+ 
++class FoundFeature{
++public:
++  float s_; // The Shi-tomasi score
++  cv::Point2f c_; // The location of the feature
++  double t_; // The timestamp
++  FoundFeature(float s, cv::Point2f c, double t) : s_(s), c_(c), t_(t){ }
++};
++
+ }
+ 
+ 

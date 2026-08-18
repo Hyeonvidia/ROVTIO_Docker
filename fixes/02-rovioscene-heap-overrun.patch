@@ -1,0 +1,36 @@
+--- a/include/rovio/RovioScene.hpp
++++ b/include/rovio/RovioScene.hpp
+@@ -44,13 +44,18 @@
+ 
+   rovio::Scene mScene;
+   cv::Mat patch_;
++  cv::Mat patch8_;
+   std::shared_ptr<SceneObject> mpSensor_[mtState::nCam_];
+   std::shared_ptr<SceneObject> mpGroundtruth_;
+   std::shared_ptr<SceneObject> mpLines_[mtState::nCam_];
+   std::shared_ptr<SceneObject> mpDepthVar_[mtState::nCam_];
+   std::shared_ptr<SceneObject> mpPatches_[mtState::nMax_];
+   RovioScene(){
+-    patch_ = cv::Mat::zeros(mtState::patchSize_*pow(2,mtState::nLevels_-1),mtState::patchSize_*pow(2,mtState::nLevels_-1),CV_8UC1);
++    // ROVTIO rewrote Patch::drawPatch to write through a float*, so this buffer must be
++    // CV_32FC1. Upstream ROVIO wrote uint8_t here; keeping CV_8UC1 overruns it 4x.
++    const int ps = mtState::patchSize_*(1<<(mtState::nLevels_-1));
++    patch_  = cv::Mat::zeros(ps,ps,CV_32FC1);
++    patch8_ = cv::Mat::zeros(ps,ps,CV_8UC1);   // setTexture() uploads GL_UNSIGNED_BYTE
+   }
+   virtual ~RovioScene(){};
+   void addKeyboardCB(unsigned char Key, std::function<void()> f){
+@@ -198,7 +203,12 @@
+           mpPatches_[i]->clear();
+           mpPatches_[i]->makeTexturedRectangle(1.0f,1.0f);
+           filterState.fsm_.features_[i].mpMultilevelPatch_->drawMultilevelPatch(patch_,cv::Point2i(0,0),1,false);
+-          mpPatches_[i]->setTexture(patch_);
++          {  // thermal patches hold raw counts (~3000+); rescale or the texture saturates
++            double lo,hi; cv::minMaxLoc(patch_,&lo,&hi);
++            const double a = (hi>lo) ? 255.0/(hi-lo) : 1.0;
++            patch_.convertTo(patch8_,CV_8U,a,-lo*a);
++          }
++          mpPatches_[i]->setTexture(patch8_);
+           for(int x=0;x<2;x++){
+             for(int y=0;y<2;y++){
+               mpPatches_[i]->vertices_[y*2+x].pos_.fromEigen(cornerVec[y*2+x].cast<float>());

@@ -1,0 +1,6 @@
+# run outputs (trajectories, diagnostics, screenshots)
+out/
+# staged compile tree, assembled by scripts/stage_sources.sh
+build/
+*.o
+.DS_Store

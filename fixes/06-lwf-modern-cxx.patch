@@ -1,0 +1,33 @@
+--- a/include/lightweight_filtering/State.hpp
++++ b/include/lightweight_filtering/State.hpp
+@@ -616,7 +616,7 @@
+   }
+   template<unsigned int i=0,typename std::enable_if<(i<E_)>::type* = nullptr>
+   inline void registerCovarianceToPropertyHandler_(Eigen::MatrixXd& cov, PropertyHandler* mpPropertyHandler, const std::string& str, int j=0){
+-    std::get<i>(mElements_).template registerCovarianceToPropertyHandler(cov,mpPropertyHandler,str,j);
++    std::get<i>(mElements_).registerCovarianceToPropertyHandler(cov,mpPropertyHandler,str,j);
+     registerCovarianceToPropertyHandler_<i+1>(cov,mpPropertyHandler,str,j+std::tuple_element<i,decltype(mElements_)>::type::D_);
+   }
+   template<unsigned int i=0,typename std::enable_if<(i>=E_)>::type* = nullptr>
+--- a/include/lightweight_filtering/common.hpp
++++ b/include/lightweight_filtering/common.hpp
+@@ -26,7 +26,7 @@
+   return kindr::getSkewMatrixFromVector(vec);
+ }
+ 
+-static void enforceSymmetry(MXD& mat){
++inline void enforceSymmetry(MXD& mat){
+   mat = 0.5*(mat+mat.transpose()).eval();
+ }
+ 
+--- a/include/lightweight_filtering/PropertyHandler.hpp
++++ b/include/lightweight_filtering/PropertyHandler.hpp
+@@ -101,7 +101,7 @@
+       *(it->first) = pt.get<TYPE>(it->second);
+     }
+     for(typename std::unordered_set<TYPE*>::iterator it=zeros_.begin(); it != zeros_.end(); ++it){
+-      **it = static_cast<TYPE>(0);
++      **it = TYPE();   // static_cast<std::string>(0) is deleted in C++23
+     }
+   }
+ };

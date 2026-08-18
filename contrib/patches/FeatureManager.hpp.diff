@@ -1,0 +1,130 @@
+--- /Users/jhpark/VSLAM/ROVTIO_Docker/third_party/rovio/include/rovio/FeatureManager.hpp	2026-08-18 02:04:42
++++ /Users/jhpark/VSLAM/ROVTIO_Docker/contrib/include/rovio/FeatureManager.hpp	2026-08-18 03:08:23
+@@ -37,6 +37,7 @@
+ #include "algorithm"
+ #include <tuple>
+ #include <list>
++#include <array>
+ 
+ namespace rovio{
+ 
+@@ -243,6 +244,66 @@
+     }
+     if(count>0) averageScore /= count;
+     return averageScore;
++  }
++
++  static bool isFirstMPBetter(MultilevelPatch<nLevels,patchSize>& mp1, MultilevelPatch<nLevels,patchSize>&mp2){
++    return mp1.s_ > mp2.s_;
++  }
++
++  /** \brief Calculates the shi tomashi scores for the candidates
++   * Custom split of the old function addBestCandidates() into this and bucketCandidates()
++   * Calculates the shi-tomasi score the candidates
++   * Returns the maximum shi-tomasi score
++   */
++  float findCandidateScore(FeatureCoordinatesVec& candidates, const ImagePyramid<nLevels>& pyr, const int l1, const int l2, const int minScore, std::vector<MultilevelPatch<nLevels,patchSize>>& multilevelPatches,  std::array<std::vector<FoundFeature>, nCam> &goodFeatures, int &numFound, const double t, const double  additionalScoreFromOtherModality, const double maxDistanceForApproxamentlyLocalizingFeatures) const{
++//    std::vector<MultilevelPatch<nLevels,patchSize>> multilevelPatches;
++    multilevelPatches.reserve(candidates.size());
++
++    std::vector<std::pair<int, MultilevelPatch<nLevels,patchSize>>> elementsNotToAdd = {};
++    std::vector<int> candidatesToRemove = {};
++
++    // Create MultilevelPatches from the candidates list and compute their Shi-Tomasi Score.
++    numFound = 0;
++    float maxScore = -1.0;
++    for (int i = 0; i < candidates.size(); i++) {
++      multilevelPatches.emplace_back();
++      if (multilevelPatches.back().isMultilevelPatchInFrame(pyr, candidates[i], l2, true)) {
++        multilevelPatches.back().extractMultilevelPatchFromImage(pyr, candidates[i], l2, true);
++        multilevelPatches.back().computeMultilevelShiTomasiScore(l1, l2);
++        if (maxDistanceForApproxamentlyLocalizingFeatures > 0) { // If using both modalities for modality selection
++          for (int camID = 0; camID < nCam; ++camID) {
++            float bestBonus = 0;
++            for (const FoundFeature &feature: goodFeatures.at(camID)) {
++              const double dist = cv::norm(candidates[i].c_ - feature.c_);
++              if (dist < maxDistanceForApproxamentlyLocalizingFeatures) {
++                const float potentialScore = additionalScoreFromOtherModality;
++                if (potentialScore < 0) throw std::logic_error("This should not be negative: " + std::to_string(potentialScore));
++                if (potentialScore > bestBonus) {
++                  bestBonus = potentialScore;
++                }
++              }
++            }
++            multilevelPatches.back().s_ += bestBonus;
++          }
++        }
++        if (multilevelPatches.back().s_ > maxScore) maxScore = multilevelPatches.back().s_;
++        if (multilevelPatches.back().s_ > minScore) {
++          numFound++;
++          if (maxDistanceForApproxamentlyLocalizingFeatures > 0) {
++            goodFeatures.at(candidates.at(i).camID_).emplace_back(FoundFeature(multilevelPatches.back().s_, candidates.at(i).c_, t));
++          }
++        }
++      } else {
++        multilevelPatches.back().s_ = -1;
++      }
++    }
++    for (const std::pair<int, MultilevelPatch<nLevels, patchSize>>& toRemove: elementsNotToAdd){
++      candidates.erase(candidates.begin() + toRemove.first);
++    }
++
++
++    std::cout << "findcandidatescore: MultilevelPactes.size(): " << multilevelPatches.size() << ", maxScore: " << maxScore << '\n';
++    return maxScore;
+   }
+ 
+   /** \brief Adds the best MultilevelPatchFeature%s from a candidates list to an existing MultilevelPatchSet.
+@@ -281,29 +342,11 @@
+   // @todo work more on bearing vectors (in general)
+   // @todo add corner motion dependency
+   // @todo check inFrame, only if COVARIANCE not too large
+-  std::unordered_set<unsigned int> addBestCandidates(const FeatureCoordinatesVec& candidates, const ImagePyramid<nLevels>& pyr, const int camID, const double initTime,
+-                                                     const int l1, const int l2, const int maxAddedFeature, const int nDetectionBuckets, const double scoreDetectionExponent,
+-                                                     const double penaltyDistance, const double zeroDistancePenalty, const bool requireMax, const float minScore){
+-    std::unordered_set<unsigned int> newFeatureIDs;
+-    std::vector<MultilevelPatch<nLevels,patchSize>> multilevelPatches;
+-    multilevelPatches.reserve(candidates.size());
++  std::unordered_set<unsigned int> bucketCandidates(const FeatureCoordinatesVec& candidates, const int camID,
++                                                     const int maxAddedFeature, const int nDetectionBuckets, const double scoreDetectionExponent,
++                                                     const double penaltyDistance, const double zeroDistancePenalty, const bool requireMax, const float minScore, const float maxScore, std::vector<MultilevelPatch<nLevels,patchSize>>& multilevelPatches){
+ 
+-    // Create MultilevelPatches from the candidates list and compute their Shi-Tomasi Score.
+-    float maxScore = -1.0;
+-    for(int i=0;i<candidates.size();i++){
+-      multilevelPatches.emplace_back();
+-      if(multilevelPatches.back().isMultilevelPatchInFrame(pyr,candidates[i],l2,true)){
+-        multilevelPatches.back().extractMultilevelPatchFromImage(pyr,candidates[i],l2,true);
+-        multilevelPatches.back().computeMultilevelShiTomasiScore(l1,l2);
+-        if(multilevelPatches.back().s_ > maxScore) maxScore = multilevelPatches.back().s_;
+-      } else {
+-        multilevelPatches.back().s_ = -1;
+-      }
+-    }
+-    if(maxScore <= minScore){
+-      return newFeatureIDs;
+-    }
+-
++    std::unordered_set<unsigned int> newFeatureIDs;
+     // Make buckets and fill based on score
+     std::vector<std::unordered_set<int>> buckets(nDetectionBuckets,std::unordered_set<int>());
+     unsigned int newBucketID;
+@@ -324,7 +367,7 @@
+     FeatureCoordinates featureCoordinates;
+     FeatureDistance featureDistance;
+     for(unsigned int i=0;i<nMax;i++){
+-      if(isValid_[i]){
++      if(isValid_[i] && camID == features_[i].mpCoordinates_->camID_){ // This makes the distribution of features in the frame not consider the features in the other modality.
+         mpMultiCamera_->transformFeature(camID,*(features_[i].mpCoordinates_),*(features_[i].mpDistance_),featureCoordinates,featureDistance);
+         if(featureCoordinates.isInFront()){
+           for (unsigned int bucketID = 1;bucketID < nDetectionBuckets;bucketID++) {
+@@ -389,9 +432,6 @@
+     return newFeatureIDs;
+   }
+ 
+-  static bool isFirstMPBetter(const std::tuple<const FeatureCoordinates*,MultilevelPatch<nLevels,patchSize>,int>& mp1, const std::tuple<const FeatureCoordinates*,MultilevelPatch<nLevels,patchSize>,int>&mp2){
+-    return std::get<1>(mp1).s_ > std::get<1>(mp2).s_;
+-  }
+ 
+   std::unordered_set<unsigned int> addBestCandidatesNew(const std::vector<FeatureCoordinates>& candidates, const ImagePyramid<nLevels>& pyr, const int camID, const double initTime,
+                                                        const int l1, const int l2, const int maxAddedFeature, const int nDetectionBuckets, const double scoreDetectionExponent,

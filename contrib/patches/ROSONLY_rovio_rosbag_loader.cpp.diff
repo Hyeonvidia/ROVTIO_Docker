@@ -1,0 +1,16 @@
+--- /Users/jhpark/VSLAM/ROVTIO_Docker/third_party/rovio/src/rovio_rosbag_loader.cpp	2026-08-18 02:04:42
++++ /tmp/rt.26332	2026-08-18 03:08:23
+@@ -185,11 +185,11 @@
+     }
+     if(it->getTopic() == cam0_topic_name){
+       sensor_msgs::ImageConstPtr imgMsg = it->instantiate<sensor_msgs::Image>();
+-      if (imgMsg != NULL) rovioNode.imgCallback0(imgMsg);
++      if (imgMsg != NULL) rovioNode.imgCallbackRoot<0>(imgMsg);
+     }
+     if(it->getTopic() == cam1_topic_name){
+       sensor_msgs::ImageConstPtr imgMsg = it->instantiate<sensor_msgs::Image>();
+-      if (imgMsg != NULL) rovioNode.imgCallback1(imgMsg);
++      if (imgMsg != NULL) rovioNode.imgCallbackRoot<1>(imgMsg);
+     }
+     ros::spinOnce();
+ 

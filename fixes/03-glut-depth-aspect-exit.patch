@@ -1,0 +1,26 @@
+--- a/include/rovio/Scene.hpp
++++ b/include/rovio/Scene.hpp
+@@ -241,9 +241,10 @@
+ 
+ static void initGlut(int argc, char** argv, Scene& scene){
+   glutInit(&argc, argv);
+-  glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGBA);
+-  glutInitWindowSize(1600, 900);
++  glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGBA|GLUT_DEPTH);  // Scene::init enables GL_DEPTH_TEST
++  glutInitWindowSize(1280, 720);                          // must match mPersProjInfo_ in Scene.cpp
+   glutInitWindowPosition(100, 100);
++  glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
+   glutCreateWindow("Scene");
+ 
+   mpScene = &scene;
+--- a/src/Scene.cpp
++++ b/src/Scene.cpp
+@@ -336,7 +336,7 @@
+ 
+     mPersProjInfo_.FOV_ = M_PI/2;
+     mPersProjInfo_.width_ = 1280;
+-    mPersProjInfo_.height_ = 960;
++    mPersProjInfo_.height_ = 720;   // was 960: squashed the view, no glutReshapeFunc exists
+     mPersProjInfo_.zNear_ = -0.1f;
+     mPersProjInfo_.zFar_ = -100.0f;
+ 

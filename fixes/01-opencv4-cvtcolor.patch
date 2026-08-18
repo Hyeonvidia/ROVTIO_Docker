@@ -1,0 +1,19 @@
+--- a/include/rovio/ImgUpdate.hpp
++++ b/include/rovio/ImgUpdate.hpp
+@@ -34,6 +34,7 @@
+ #include "lightweight_filtering/State.hpp"
+ 
+ #include "rovio/CoordinateTransform/FeatureOutput.hpp"
++#include <opencv2/imgproc.hpp>
+ #include "rovio/FilterStates.hpp"
+ #include "rovio/Camera.hpp"
+ #include "rovio/CoordinateTransform/PixelOutput.hpp"
+@@ -681,7 +682,7 @@
+         else
+           meas.aux().pyr_[meas.aux().activeModality_].imgs_[0].convertTo(tmpImg, CV_8UC1);
+         //Convert Image to color for drawing purposes
+-        cvtColor(tmpImg, filterState.img_[meas.aux().activeModality_], CV_GRAY2RGB);
++        cv::cvtColor(tmpImg, filterState.img_[meas.aux().activeModality_], cv::COLOR_GRAY2RGB);
+       }
+       filterState.imgTime_ = filterState.t_;
+       filterState.imageCounter_++;

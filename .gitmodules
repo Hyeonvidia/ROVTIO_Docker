@@ -1,0 +1,12 @@
+[submodule "third_party/rovio"]
+	path = third_party/rovio
+	url = https://github.com/ethz-asl/rovio.git
+[submodule "third_party/kindr"]
+	path = third_party/kindr
+	url = https://github.com/ethz-asl/kindr.git
+[submodule "third_party/lightweight_filtering"]
+	path = third_party/lightweight_filtering
+	url = https://bitbucket.org/bloesch/lightweight_filtering
+[submodule "third_party/rovtio-fork"]
+	path = third_party/rovtio-fork
+	url = https://github.com/ntnu-arl/rovtio.git

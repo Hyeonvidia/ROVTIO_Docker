@@ -1,0 +1,10 @@
+upstream-rovtio-fork/
+build/
+out/
+docs_PLAN.md
+**/.git
+third_party/rovio/.git
+third_party/kindr/*
+!third_party/kindr/include
+third_party/lightweight_filtering/*
+!third_party/lightweight_filtering/include

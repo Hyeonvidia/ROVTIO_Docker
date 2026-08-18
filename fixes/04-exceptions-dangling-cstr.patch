@@ -1,0 +1,18 @@
+--- a/include/rovio/exceptions.hpp
++++ b/include/rovio/exceptions.hpp
+@@ -52,10 +52,13 @@
+       line_ = line;
+     }
+     virtual ~ExceptionBase(){};
+-    virtual const char * what () const throw ()
++    virtual const char * what () const noexcept override
+     {
+-      return (file_ + ":" + std::to_string(line_) + ": " + function_ + "()" + " " + message_).c_str();
++      if(what_.empty()) what_ = file_ + ":" + std::to_string(line_) + ": " + function_ + "() " + message_;
++      return what_.c_str();
+     }
++   private:
++    mutable std::string what_;
+   };
+ 
+   struct CameraNullPtrException : public ExceptionBase

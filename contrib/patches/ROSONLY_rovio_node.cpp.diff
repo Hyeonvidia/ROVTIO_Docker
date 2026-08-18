@@ -1,0 +1,23 @@
+--- /Users/jhpark/VSLAM/ROVTIO_Docker/third_party/rovio/src/rovio_node.cpp	2026-08-18 02:04:42
++++ /tmp/rt.26332	2026-08-18 03:08:23
+@@ -107,6 +107,7 @@
+       mpFilter->cameraCalibrationFile_[camID] = camera_config;
+     }
+   }
++  std::cout << "Max number of features: " << nMax_ << '\n';
+   mpFilter->refreshProperties();
+ 
+   // Node
+@@ -122,7 +123,11 @@
+   mRovioScene.addKeyboardCB('r',[&rovioNode]() mutable {rovioNode.requestReset();});
+   glutMainLoop();
+ #else
+-  ros::spin();
++  ros::spin(); // Original
++  //Custom to do this multithreaded
++//  ros::MultiThreadedSpinner spinner(4); // Use 4 threads
++//  spinner.spin(); // spin() will not return until the node has been shutdown
++  // End custom
+ #endif
+   return 0;
+ }

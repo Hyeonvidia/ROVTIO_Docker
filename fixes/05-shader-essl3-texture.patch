@@ -1,0 +1,10 @@
+--- a/shaders/shader.fs
++++ b/shaders/shader.fs
+@@ -39,6 +39,6 @@
+         FragColor = Color0 * (AmbientColor + DiffuseColor);
+     }
+     else {
+-        FragColor = texture2D(gSampler, TexCoord0.st) * (AmbientColor + DiffuseColor);
++        FragColor = texture(gSampler, TexCoord0.st) * (AmbientColor + DiffuseColor);
+     }
+ }
